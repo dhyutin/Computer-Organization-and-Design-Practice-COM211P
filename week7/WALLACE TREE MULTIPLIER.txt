@@ -1,0 +1,140 @@
+//Lab 7: Wallace Tree Multiplier
+//Set the measurement and percesion of time
+`timescale 1ns / 1ps
+
+//4-bit Carry look ahead adder
+module CLA(a,b,cin,sum,cout);
+    input[3:0] a,b;       //a,b are 4-bit number
+    input cin;            //Initial carry
+    output [3:0] sum;     // Output is a 4-bit binary number
+    output cout;          // cout is the final carry
+//Define all wires 
+    wire p0,p1,p2,p3,g0,g1,g2,g3,c1,c2,c3,c4;
+    
+// Pi = XOR(Ai,Bi)
+    assign p0=(a[0]^b[0]), p1=(a[1]^b[1]), p2=(a[2]^b[2]), p3=(a[3]^b[3]); 
+// Gi = AND(Ai,Bi)
+    assign g0=(a[0]&b[0]), g1=(a[1]&b[1]), g2=(a[2]&b[2]), g3=(a[3]&b[3]);
+//C(i) = G(i-1) + P(i)C(i-1)
+    assign c0=cin, c1=g0|(p0&cin), c2=g1|(p1&g0)|(p1&p0&cin), c3=g2|(p2&g1)|(p2&p1&g0)|(p1&p1&p0&cin), c4=g3|(p3&g2)|(p3&p2&g1)|(p3&p2&p1&g0)|(p3&p2&p1&p0&cin);
+// Sum(i) = XOR(Pi,Ci)
+    assign sum[0]=p0^c0, sum[1]=p1^c1, sum[2]=p2^c2, sum[3]=p3^c3;
+    assign cout=c4;
+endmodule
+
+//8-bit carry look ahead logic using 4-bit cla
+module CLA_8bit(A,B,cin,prod,cout);
+    input [7:0]A,B;        //input of size 8bits
+    input cin;             //one bit cin
+    
+    output [7:0] prod;     //Product of 8bits
+    output cout;           //Final Carry
+    
+    wire carry;          //Define wire
+    
+    CLA_adder cla1 (A[3:0],B[3:0],cin,prod[3:0],carry);    //CLA of first 4 bits of a and b 
+    CLA_adder cla2 (A[7:4],B[7:4],carry,prod[7:4],cout);   //CLA of last 4 bits of a and b with cout of first CLA as cin
+    
+endmodule
+
+//Full Adder 
+module fa(in0,in1,cin,sum,cout);  
+	input in0,in1,cin;     //inputs 
+	output sum,cout;       //outputs
+	
+	assign sum=in0^in1^cin;
+	assign cout=(in0&in1)|((in0^in1)&cin);
+endmodule
+
+//Half Adder
+module ha(in0,in1,sum,cout);  
+    input in0,in1;         //inputs
+    output sum,cout;      //outputs
+    
+    assign sum=in0^in1;
+    assign cout=in0&in1;
+endmodule
+
+//Wallace Tree Multiplier
+module wallace(A,B,prod);
+    
+    //inputs and outputs
+    input [3:0] A,B;
+    output [7:0] prod;
+    wire [7:0] prod1,prod2;
+    //internal variables.
+    //Define all wires
+    wire s11,s12,s13,s14,s15,s22,s23,s24,s25,s26,s32,s33,s34,s35,s36,s37;
+    wire s1,s2,s3,s4,s5,s6;
+    wire c1,c2,c3,c4,c5,c6;
+    wire c11,c12,c13,c14,c15,c22,c23,c24,c25,c26,c32,c33,c34,c35,c36,c37;
+    wire [3:0] p0,p1,p2,p3;
+    wire cout2;
+
+//initialize the p's.
+    assign  p0 = A & {4{B[0]}};
+    assign  p1 = A & {4{B[1]}};
+    assign  p2 = A & {4{B[2]}};
+    assign  p3 = A & {4{B[3]}};
+
+//final product assignments    
+    assign prod1[0] = p0[0];
+    assign prod1[1] = p0[1];
+    assign prod1[2] = p0[2];
+    assign prod1[3] = s4;
+    assign prod1[4] = s5;
+    assign prod1[5] = s6;
+    assign prod1[6] = p3[3];
+    assign prod1[7] = 0;
+    
+    assign prod2[0] = 0;
+    assign prod2[1] = p1[0];
+    assign prod2[2] = s3;
+    assign prod2[3] = c3;
+    assign prod2[4] = c4;
+    assign prod2[5] = c5;
+    assign prod2[6] = c6;
+    assign prod2[7] = 0;
+
+//first stage
+    //ha ha11 (p0[1],p1[0],s11,c11);
+    ha ha1(p2[1],p3[0],s1,c1);
+    ha ha2(p2[2],p3[1],s2,c2);
+
+//second stage
+    ha ha22(p1[1],p2[0],s3,c3);
+    fa fa23(p0[3],p1[2],s1,s4,c4);
+    fa fa24(p1[3],s2,c1,s5,c5);
+    fa fa25(p2[3],p3[2],c2,s6,c6);
+
+//third stage
+    CLA_8bit obj1(prod1,prod2,1'b0,prod,cout);
+    
+endmodule
+
+module wallace_tb;
+
+    // Inputs
+    reg [3:0] A;
+    reg [3:0] B;
+
+    // Outputs
+    wire [7:0] prod;
+
+    // Instantiate the Unit Under Test (UUT)
+    wallace obj(A,B,prod);
+
+    initial begin
+	
+		#0  A=4'b1000;B=4'b0001;
+		#10  A=4'b0000;B=4'b0000;
+		#10  A=4'b0010;B=4'b1111;
+		#10  A=4'b0000;B=4'b1111;
+		
+	end
+	
+	initial begin
+		$monitor("%d: a=%b b=%b product=%b",$time,A,B,prod);
+	end
+      
+endmodule

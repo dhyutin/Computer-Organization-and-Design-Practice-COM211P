@@ -1,0 +1,98 @@
+;CO LAB MIDSEM Q2 :CHECK IF A GIVEN NUMBER IS DUDNEY'S NUMBER OR NOT
+section .data
+;Constant values are taken in section.data
+   number db '512'                       ;number
+   len equ $ - number  
+   msg1 db " is a Dudeney Number"
+   len1 equ $ - msg1
+   msg2 db " is NOT a Dudeney Number"
+   len2 equ $ - msg2
+
+section .text
+	global _start
+_start:
+    xor ecx,ecx          ;Initiate ecx register as 0
+    xor ebx,ebx          ;Initiate ebx register as 0
+	mov eax,512          ;the number which should be checked if it's dudeney or not
+	
+	push eax             ; push the number (in eax) into stack
+	mov ecx,10           ;Loop Counter
+	mov esi,0            ; digit counter
+
+;function to get the number of digits in the given number 
+get_digit:              
+    xor edx, edx        ;initiate edx register to 0
+    xor ebx,ebx         ;initiate ebx register to 0
+    div ecx             ;divide the number by 10 .Now the reminder ,i.e the right most element will be save in edx 
+    push dx             ; push the reminder (right most digit of the number) from stack
+    inc esi             ;increment esi
+    cmp eax,0           ;check if the number became 0 after division
+    jne get_digit       ;If number is not 0 , then run "get_digit" again
+
+
+    xor edx,edx         ;Initiate edx register as 0
+    xor eax,eax         ;initiate eac register as 0
+    mov edi,esi         ; edi has the value of number of digits in the number
+    clc                 ;Flag
+    
+    mov eax,0
+
+;Function to find the sum of the digits . EG : 512 => 5+1+2=8   
+add_digits:
+    pop dx              ;Pop the right most digit
+    adc ax,dx           ;add it to ax
+    dec esi             ;esi=number of digits here
+    cmp esi,0           ;if not all digits are added then continue adding digits
+    jne add_digits     
+    
+ mov ebx,eax           ;ebx had the number now
+ mov eax,1             ;initiate eax as 1  
+ mov esi,3             ;loop counter set to 3 as we should multiply 3 times to get cube
+
+;Function to find the cube of the number equal to the sum of digits
+cube_:
+    mul ebx        ;multiply ebx with ebx 3 times
+    dec esi 
+    cmp esi,0      ;if we didnt multiply the number by itself for 3 times then continue multiplication
+    jne cube_
+
+;function to compare the orginal number and the obtained number after calculation
+compare:
+    mov edx,eax    ;now edx has the number stored
+    pop eax
+    cmp eax,edx    
+    je dudney      ;if both numbers are equal =>DUDNEY'S NUMBER
+    jne not_dudney ;else => NOT DUDNEY'S NUMBER
+    
+;Print statements
+dudney:
+   mov eax,4          
+   mov ebx,1          ;system call number (sys_write)
+   mov ecx,number     ;message to be printed
+   mov edx,len        ;message length
+   int 0x80           ;call kernel
+   
+   mov eax,4
+   mov ebx,1          ;system call number (sys_write)
+   mov ecx,msg1       ;message to be printed
+   mov edx,len1       ;message length
+   int 0x80           ;call kernel
+   
+   jmp exit
+   
+not_dudney:
+   mov eax,4          
+   mov ebx,1          ;system call number (sys_write)
+   mov ecx,number     ;message to be printed
+   mov edx,len        ;message length
+   int 0x80 
+   
+   mov eax,4
+   mov ebx,1          ;system call number (sys_write)
+   mov ecx,msg2       ;message to be printed
+   mov edx,len2       ;message length
+   int 0x80           ;call kernel
+
+exit:
+   mov eax,1           ;exit
+   int 0x80

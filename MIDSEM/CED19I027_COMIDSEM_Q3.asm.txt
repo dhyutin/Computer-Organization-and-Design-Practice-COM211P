@@ -1,0 +1,99 @@
+;CO MIDSEM LAB : Q3: Given two strings A and B, write an ALP for finding whether there is a substring or not and display the result
+
+section .data
+;constant values are mentioned here
+	A db "IIITDM"           ;string A
+	lena equ $ - A
+	
+	B db "IIT"             ;string B
+	lenb equ $ - B
+	
+;output messages
+    msg1 db "B is substring of A"
+	len1 equ $ - msg1
+	
+	msg2 db "A is substring of B"
+	len2 equ $ - msg2
+section .text
+	global _start
+_start:
+
+;to decide if we should compare string a with string b or string b with string a
+mov al,lena
+mov bl,lenb
+cmp al,bl
+jg abig
+jle bbig
+
+;if string a is bigger than string b
+abig:
+    mov esi,A         ;esi = string A
+    mov edi,B         ;edi = string B
+    mov ecx,0        
+    mov edx,0
+check:                   
+    mov al,byte[esi+ecx]     ;get each character from string A
+    mov bl,byte[edi+edx]     ;get each character from string B
+    cmp al,bl 
+    je same                  ;if both characters match , then check if its a substring
+    jne continue             ;else continue
+    
+same:
+   inc edx                    ;inc edx since al and bl equal
+   cmp edx,lenb              ;if edx =lenb then entire substring is there
+   je asb
+   jne moveon                 ;if not equal then move on
+ 
+continue:                   ;if al and bl not equal then check from first
+   mov edx,0   
+   
+moveon:   
+   inc ecx
+   cmp ecx,lena
+   jmp check
+;for printing a is substring of b
+asb:
+   mov eax,4        ;system call number (sys_write)
+   mov ebx,1        ;file descriptor (stdout)
+   mov ecx,msg1     ;message to write
+   mov edx,len1     ;length of message
+   int 0x80         ;call kernel
+   jmp exit
+
+;if b is bigger than a , we compare string a with b 
+bbig:
+    mov esi,B               
+    mov edi,A               
+    mov ecx,0
+    mov edx,0
+check1:
+    mov al,byte[esi+ecx]    ;get each character from string B
+    mov bl,byte[edi+edx]    ;get each character from string A
+    cmp al,bl
+    je samee
+    jne cont
+    
+samee:
+   inc edx                  ;inc edx since al and bl equal
+   cmp edx,lena             ;if edx =lena then entire substring is there
+   je bsa
+   jne continuee               ;if not equal then continue
+ 
+cont:                      ;if al and bl not equal then check from first
+   mov edx,0   
+   
+continuee:   
+   inc ecx
+   cmp ecx,lenb
+   jl check1
+;for printing b is substring of a
+bsa:
+   mov eax,4        ;system call number (sys_write)
+   mov ebx,1        ;file descriptor (stdout)
+   mov ecx,msg2     ;message to write
+   mov edx,len2     ;length of message
+   int 0x80         ;call kernel
+   jmp exit   
+   exit:
+   mov eax,1      ;exit program
+   int 0x80

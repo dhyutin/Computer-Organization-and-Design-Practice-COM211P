@@ -1,0 +1,140 @@
+;CED19I027 -  ENDSEM LAB Q1 : FINDING GCD AND LCM OF 2 NUMBERS
+section .data             ;assigning all constants
+	msg db "GCD = "
+	len equ $ - msg
+	
+	msg1 db "LCM = "
+	len1 equ $ - msg1
+	
+	GCD db '000'
+    len2 equ $ - GCD
+    
+	LCM db '000'
+    len3 equ $ - LCM
+    
+    next_line db 0XA
+    
+section .text
+	global _start
+
+_start: 
+
+	mov eax, 6     ;number 1
+	push eax       ;push into stack to be used again while finding LCM
+	mov ebx, 4     ;number 2
+	push ebx       ;push into stack to be used again while finding LCM
+
+;To find GCD of 2 numbers using long division method	
+gcd_func:
+   div ebx          ;divide number 1 by number 2 
+   cmp edx,0        ;if remainder is 0 , then the divident is only GCD  
+   jne division     ;IF remainder is not 0 ,then we continue with current divisor as dividend anf reminder as divisor (Long division)
+   xor eax,eax      ;initiate eax as 0
+   mov eax,ebx      ;move divisor into Dividend(EAX)
+   jmp next    
+ division:
+   xor eax,eax      
+   mov eax,ebx
+   xor ebx,ebx
+   mov ebx,edx
+   xor edx,edx
+   jmp gcd_func
+   
+; Conversion of GCD integer to string that is printable
+next:
+    push eax ;store the value of GCD that is useful to find LCM
+
+    mov ecx, 10
+    xor bx, bx      ; counts the digits in the answer
+
+    jump:
+    xor edx, edx
+    div ecx         ; when we divide by 10 , we get the right most digit
+    push dx         ; pushing each digit into the stack
+    inc bx          ; digit counter is incremented
+    test eax, eax   ; check if eax is 0
+    jnz jump        ; if eax is not zero then jump
+
+    ; length adjust
+    xor eax, eax
+    mov ax, len2
+    sub ax, bx
+
+    mov cx, bx      ; bx is number of digit digits , which is now moved to count register
+    mov esi, eax    ; we shift accumulator register to source index register for string operations
+
+    loop1:
+    pop ax               ;popping a stack into eax
+    add al, '0'          ; converting the integer to ascii
+    mov [GCD+esi],al  ; move the ascii to answer
+    inc esi              ; index to the next digit
+    loop loop1
+    
+;To find LCM using the formula LCM = (NUM1*NUM2)/GCD
+ lcm_func:
+     pop eax      ;POP GCD
+     mov ecx,eax  ;Store GCD in ECX Register
+     pop eax      ;pop number 1
+     pop ebx      ;pop number 2
+     mul ebx      ;multiply num1 and num2 . Now EAX stores Num1*Num2
+     div ecx      ; Divide EAX (num1*num2) with ecx(GCD)
+     ;NOW EAX STORES LCM VALUES
+; Conversion of LCM integer to string that is printable
+    mov ecx, 10
+    xor bx, bx      ; counts the digits in the answer
+
+    jump1:
+    xor edx, edx
+    div ecx         ; when we divide by 10 , we get the right most digit
+    push dx         ; pushing each digit into the stack
+    inc bx          ; digit counter is incremented
+    test eax, eax   ; check if eax is 0
+    jnz jump1       ; if eax is not zero then jump
+
+    ; length adjust
+    xor eax, eax
+    mov ax, len3
+    sub ax, bx
+
+    mov cx, bx      ; bx is number of digit digits , which is now moved to count register
+    mov esi, eax    ; we shift accumulator register to source index register for string operations
+
+    loop11:
+    pop ax               ;popping a stack into eax
+    add al, '0'          ; converting the integer to ascii
+    mov [LCM+esi],al  ; move the ascii to answer
+    inc esi              ; index to the next digit
+    loop loop11
+    
+print:
+	mov ecx, msg 
+	mov edx, len
+	mov ebx, 1
+	mov eax, 4
+	int 0x80
+
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, GCD
+	mov edx, len2
+	int 0x80
+	
+	mov eax,4
+	mov ebx,1
+	mov ecx,next_line
+	mov edx,1
+	int 0x80
+	
+	mov ecx, msg1
+	mov edx, len1
+	mov ebx, 1
+	mov eax, 4
+	int 0x80
+
+	mov eax, 4
+	mov ebx, 1
+	mov ecx, LCM
+	mov edx, len3
+	int 0x80
+	mov eax, 1   ;exit the program
+	int 0x80

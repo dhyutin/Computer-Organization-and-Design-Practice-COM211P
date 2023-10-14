@@ -1,0 +1,55 @@
+// CED19I027 - CO ENDSEM EXAM Q2 : VERILOG DIVISION OF 2 10 BIT BINARY NUMBERS TO DISPLAY QUOTIEND AND REMAINDER
+module division_Reductive(A,B,Q,R);
+   input [9:0] A,B;          //A,B are 10-bit binary inputs
+   output [9:0] Q,R;    // Q = quotient ,R= Reminder :10 bit binary outputs
+
+   reg [20:0] aq;               //Internal variable aq of size 21 bits 
+   reg [10:0] temp,temp1,temp2; //Internal variable temp,temp1,temp2 of size 11bits each
+   wire [9:0] sum;              //Output wire sum of size 10bits
+   wire cout;
+   integer k;
+   always @(*)
+   begin
+   aq[20:10]=11'b00000000000;  //assign aq as 0 initially
+   aq[9:0]=A[9:0];          //first half of aq as A
+   temp1[9:0]=B[9:0];   //for subtracting
+   temp1[10]=1'b0;     
+   for(k=0;k<10;k=k+1) 
+   begin                 //for loop begins
+       aq=aq<<1;    //shift aq by 1
+       temp[10:0]=aq[20:10]; //change temp2 to temp2 minus seconf half of aq (repeated subtraction)
+       temp2[10:0]=aq[20:10]; 
+       temp2=temp2-temp1;
+       aq[20:10]=temp2[10:0];
+       if(aq[20] == 0)
+         begin
+            aq[0] = 1;
+         end
+       else 
+        begin
+          aq[0]=0;
+          aq[20:10]=temp[10:0];   //restore
+        end
+   end
+   end
+   
+   assign R[9:0]=aq[19:10];
+   assign Q[9:0]=aq[9:0];
+endmodule
+
+module testbench;  //test bench
+    reg [9:0] A,B; //Inputs
+    wire [9:0] Q,R; //Outputs
+    division_Reductive uut(A,B,Q,R);
+    //Test values of A and B
+    initial begin
+		#0  A=10'b0000010111;B=10'b0000000110;
+		#10  A=10'b0000010111;B=10'b0000000001;
+		#10  A=10'b0000011111;B=10'b0000000011;
+		#10  A=10'b1111010111;B=10'b0000000001;
+	end
+	
+	initial begin
+		$monitor("%d: A = %b B = %b Quotient = %b Reminder = %b",$time,A,B,Q,R);  //Display 
+	end
+endmodule
